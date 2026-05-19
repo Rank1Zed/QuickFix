@@ -1,0 +1,19 @@
+{
+  "name": "Quick Fix",
+  "short_name": "QuickFix",
+  "description": "Plataforma de chamados, diagnostico e acompanhamento de servicos de TI.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/quickfix-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
