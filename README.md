@@ -13,6 +13,8 @@ python manage.py runserver 127.0.0.1:8000
 
 API principal: `http://127.0.0.1:8000/api/`.
 
+Crie um arquivo `.env` local usando `.env.example` como modelo. Nunca envie `.env` para o Git.
+
 ## Rodar o site
 
 Em outro terminal:

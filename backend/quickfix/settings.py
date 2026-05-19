@@ -1,8 +1,9 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "quickfix-dev-secret-key"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "quickfix-dev-only-secret-key")
 DEBUG = True
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
