@@ -1,38 +1,89 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Computer, Wifi, Wrench, ArrowLeft, Shield, Award } from "lucide-react";
+import { Computer, Wifi, Wrench, ArrowLeft, Shield, Award, Mail, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "../components/ui/sonner";
-import { api } from "../api";
 
 interface ProfessionalLoginFormData {
-  nomeCompleto: string;
-  email: string;
-  telefone: string;
-  registro?: string;
+  identifier: string;
 }
+
+interface PasswordRecoveryFormData {
+  email: string;
+  code: string;
+}
+
+const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+const USERNAME_PATTERN = /^[a-zA-Z0-9._-]{3,40}$/;
 
 export default function ProfessionalLogin() {
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm<ProfessionalLoginFormData>();
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
 
-  const onSubmit = async (data: ProfessionalLoginFormData) => {
-    try {
-      const professional = await api.saveProfessional(data);
-      localStorage.setItem("professionalData", JSON.stringify(professional));
-      toast.success("Login de profissional conectado ao servidor!");
-    } catch (error) {
-      localStorage.setItem("professionalData", JSON.stringify(data));
-      toast.warning("Servidor indisponivel. Dados salvos neste dispositivo.");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ProfessionalLoginFormData>({ mode: "onChange" });
+
+  const {
+    register: registerRecovery,
+    handleSubmit: handleRecoverySubmit,
+    formState: { errors: recoveryErrors },
+    reset: resetRecovery,
+    watch: watchRecovery,
+  } = useForm<PasswordRecoveryFormData>({ mode: "onChange" });
+
+  const validateIdentifier = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "Informe seu e-mail ou nome de usuario.";
     }
+    if (trimmed.includes("@")) {
+      return EMAIL_PATTERN.test(trimmed) || "Informe um e-mail profissional valido.";
+    }
+    return USERNAME_PATTERN.test(trimmed) || "Use 3 a 40 caracteres: letras, numeros, ponto, hifen ou underline.";
+  };
+
+  const onSubmit = (data: ProfessionalLoginFormData) => {
+    const identifier = data.identifier.trim();
+    localStorage.setItem("professionalData", JSON.stringify({ identifier, loginAt: new Date().toISOString() }));
+    toast.success("Login profissional validado!");
 
     setTimeout(() => {
       navigate("/professional-dashboard");
     }, 500);
+  };
+
+  const sendRecoveryCode = (data: PasswordRecoveryFormData) => {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setRecoveryCode(code);
+    setRecoveryEmail(data.email.trim());
+    toast.success("Codigo de recuperacao enviado para o e-mail informado.");
+
+    // Em producao, este codigo deve sair por e-mail via backend. No ambiente local, o console ajuda nos testes.
+    console.info(`[QuickFix] Codigo de recuperacao para ${data.email}: ${code}`);
+  };
+
+  const confirmRecoveryCode = () => {
+    const typedCode = watchRecovery("code")?.trim();
+    if (typedCode !== recoveryCode) {
+      toast.error("Codigo invalido. Confira o e-mail e tente novamente.");
+      return;
+    }
+
+    toast.success("Codigo confirmado. Voce ja pode redefinir sua senha com o suporte Quick Fix.");
+    setShowRecovery(false);
+    setRecoveryCode("");
+    setRecoveryEmail("");
+    resetRecovery();
   };
 
   return (
@@ -40,16 +91,16 @@ export default function ProfessionalLogin() {
       <Toaster />
 
       <div className="w-full max-w-6xl">
-        {/* Botão Voltar */}
         <div className="mb-4">
-          <Button variant="ghost" onClick={() => navigate("/")} className="gap-2">
-            <ArrowLeft className="size-4" />
-            Voltar para Home
+          <Button variant="ghost" asChild className="gap-2">
+            <a href="/">
+              <ArrowLeft className="size-4" />
+              Voltar para Home
+            </a>
           </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          {/* Lado Esquerdo - Branding */}
           <div className="hidden lg:block space-y-6">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -57,55 +108,42 @@ export default function ProfessionalLogin() {
                   <Wrench className="size-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-5xl font-bold text-gray-900 dark:text-white">
-                    Quick Fix
-                  </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Área do Profissional
-                  </p>
+                  <h1 className="text-5xl font-bold text-gray-900 dark:text-white">Quick Fix</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Area do Profissional</p>
                 </div>
               </div>
               <p className="text-xl text-gray-600 dark:text-gray-300">
-                Faça login para gerenciar seus atendimentos e acompanhar suas tarefas
+                Acesse seu painel para gerenciar atendimentos, analisar pedidos e acompanhar tarefas.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-12">
               <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-l-4 border-blue-600">
                 <Computer className="size-10 text-blue-600 mb-3" />
-                <h3 className="font-semibold mb-2">Manutenção</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Gerenciar chamados de manutenção
-                </p>
+                <h3 className="font-semibold mb-2">Manutencao</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Gerenciar chamados de manutencao</p>
               </div>
 
               <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-l-4 border-green-600">
                 <Wifi className="size-10 text-green-600 mb-3" />
                 <h3 className="font-semibold mb-2">Redes</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Gerenciar projetos de rede
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Gerenciar projetos de rede</p>
               </div>
 
               <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-l-4 border-purple-600">
                 <Shield className="size-10 text-purple-600 mb-3" />
-                <h3 className="font-semibold mb-2">Segurança</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Auditorias e proteção de sistemas
-                </p>
+                <h3 className="font-semibold mb-2">Seguranca</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Auditorias e protecao de sistemas</p>
               </div>
 
               <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border-l-4 border-orange-600">
                 <Award className="size-10 text-orange-600 mb-3" />
                 <h3 className="font-semibold mb-2">Especialista</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Suporte técnico especializado
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Suporte tecnico especializado</p>
               </div>
             </div>
           </div>
 
-          {/* Lado Direito - Formulário */}
           <Card className="w-full shadow-2xl border-2 border-green-200 dark:border-green-800">
             <CardHeader className="space-y-3">
               <div className="flex items-center gap-3 lg:hidden">
@@ -114,84 +152,103 @@ export default function ProfessionalLogin() {
                 </div>
                 <CardTitle className="text-2xl">Quick Fix</CardTitle>
               </div>
-              <CardTitle className="text-2xl hidden lg:block">Área do Profissional</CardTitle>
-              <CardDescription>
-                Preencha seus dados profissionais para acessar o sistema de gerenciamento
-              </CardDescription>
+              <CardTitle className="text-2xl hidden lg:block">Login do Profissional</CardTitle>
+              <CardDescription>Entre com seu e-mail profissional ou nome de usuario cadastrado.</CardDescription>
             </CardHeader>
 
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nomeCompleto">Nome Completo *</Label>
-                  <Input
-                    id="nomeCompleto"
-                    {...register("nomeCompleto", { required: "Nome é obrigatório" })}
-                    placeholder="Seu nome completo"
-                  />
-                  {errors.nomeCompleto && (
-                    <span className="text-sm text-red-500">{errors.nomeCompleto.message}</span>
-                  )}
-                </div>
+              {!showRecovery ? (
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="identifier">E-mail ou nome de usuario *</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="identifier"
+                        className="pl-9"
+                        autoComplete="username"
+                        {...register("identifier", { validate: validateIdentifier })}
+                        placeholder="profissional@quickfix.com ou usuario"
+                      />
+                    </div>
+                    {errors.identifier && <span className="text-sm text-red-500">{errors.identifier.message}</span>}
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail Profissional *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...register("email", {
-                      required: "E-mail é obrigatório",
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "E-mail inválido"
-                      }
-                    })}
-                    placeholder="profissional@quickfix.com"
-                  />
-                  {errors.email && (
-                    <span className="text-sm text-red-500">{errors.email.message}</span>
-                  )}
-                </div>
+                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" size="lg">
+                    Acessar Painel
+                  </Button>
 
-                <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone *</Label>
-                  <Input
-                    id="telefone"
-                    {...register("telefone", { required: "Telefone é obrigatório" })}
-                    placeholder="(00) 00000-0000"
-                  />
-                  {errors.telefone && (
-                    <span className="text-sm text-red-500">{errors.telefone.message}</span>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="registro">Registro do Profissional *</Label>
-                  <Input
-                    id="registro"
-                    {...register("registro")}
-                    placeholder="Número de registro do profissional"
-                  />
-                </div>
-
-                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" size="lg">
-                  Acessar Painel
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground mt-4">
-                  Acesso exclusivo para profissionais cadastrados no sistema Quick Fix.
-                </p>
-                <p className="text-xs text-center text-muted-foreground">
-                  Não tem cadastro conosco? Cadastre-se{" "}
                   <button
                     type="button"
-                    onClick={() => navigate("/professional-register")}
-                    className="text-xs underline hover:text-green-600 transition-colors"
+                    onClick={() => setShowRecovery(true)}
+                    className="w-full text-sm underline hover:text-green-600 transition-colors"
                   >
-                    aqui
+                    Esqueceu a senha?
                   </button>
-                </p>
-              </form>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    Nao tem cadastro conosco?{" "}
+                    <a href="/professional-register" className="underline hover:text-green-600 transition-colors">
+                      Cadastre-se aqui
+                    </a>
+                  </p>
+                </form>
+              ) : (
+                <form onSubmit={handleRecoverySubmit(sendRecoveryCode)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="recovery-email">E-mail cadastrado *</Label>
+                    <Input
+                      id="recovery-email"
+                      type="email"
+                      autoComplete="email"
+                      disabled={!!recoveryCode}
+                      {...registerRecovery("email", {
+                        required: "Informe o e-mail cadastrado.",
+                        pattern: { value: EMAIL_PATTERN, message: "Informe um e-mail valido." },
+                      })}
+                      placeholder="profissional@quickfix.com"
+                    />
+                    {recoveryErrors.email && <span className="text-sm text-red-500">{recoveryErrors.email.message}</span>}
+                  </div>
+
+                  {!recoveryCode ? (
+                    <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" size="lg">
+                      Enviar codigo por e-mail
+                    </Button>
+                  ) : (
+                    <>
+                      <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                        Enviamos um codigo de 6 digitos para {recoveryEmail}. Verifique sua caixa de entrada.
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="recovery-code">Codigo recebido *</Label>
+                        <div className="relative">
+                          <KeyRound className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            id="recovery-code"
+                            className="pl-9 tracking-[0.35em]"
+                            inputMode="numeric"
+                            maxLength={6}
+                            {...registerRecovery("code", {
+                              required: "Informe o codigo recebido.",
+                              pattern: { value: /^\d{6}$/, message: "O codigo deve ter 6 numeros." },
+                            })}
+                            placeholder="000000"
+                          />
+                        </div>
+                        {recoveryErrors.code && <span className="text-sm text-red-500">{recoveryErrors.code.message}</span>}
+                      </div>
+                      <Button type="button" onClick={confirmRecoveryCode} className="w-full" size="lg">
+                        Confirmar codigo
+                      </Button>
+                    </>
+                  )}
+
+                  <Button type="button" variant="outline" onClick={() => setShowRecovery(false)} className="w-full">
+                    Voltar ao login
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
