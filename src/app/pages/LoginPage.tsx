@@ -22,8 +22,9 @@ export default function LoginPage() {
   const location = useLocation();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
   
-  // Pega o redirectTo do state (se houver)
-  const redirectTo = (location.state as any)?.redirectTo || "/dashboard";
+  // Pega redirectTo da query string ou do state
+  const queryParams = new URLSearchParams(location.search);
+  const redirectTo = (location.state as any)?.redirectTo || queryParams.get("redirectTo") || "/dashboard";
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -47,9 +48,11 @@ export default function LoginPage() {
       <div className="w-full max-w-6xl">
         {/* Botão Voltar */}
         <div className="mb-4">
-          <Button variant="ghost" onClick={() => navigate("/")} className="gap-2">
-            <ArrowLeft className="size-4" />
-            Voltar para Home
+          <Button variant="ghost" asChild className="gap-2">
+            <a href="/">
+              <ArrowLeft className="size-4" />
+              Voltar para Home
+            </a>
           </Button>
         </div>
         
@@ -189,13 +192,9 @@ export default function LoginPage() {
                 </p>
                 <p className="text-xs text-center text-muted-foreground">
                   Não tem cadastro conosco? Cadastre-se{" "}
-                  <button
-                    type="button"
-                    onClick={() => navigate("/client-register")}
-                    className="text-xs underline hover:text-primary transition-colors"
-                  >
+                  <a href="/client-register" className="text-xs underline hover:text-primary transition-colors">
                     aqui
-                  </button>
+                  </a>
                 </p>
               </form>
             </CardContent>

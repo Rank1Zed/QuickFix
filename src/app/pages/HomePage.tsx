@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -40,13 +39,6 @@ const techLogos = [
 ];
 
 export default function HomePage() {
-  const navigate = useNavigate();
-
-  const handleServiceClick = (serviceId: string) => {
-    // Redirecionar para login e depois para o questionário do serviço
-    navigate("/login", { state: { redirectTo: `/questionnaire/${serviceId}` } });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white">
       {/* Header/Navbar com Glassmorphism */}
@@ -76,18 +68,22 @@ export default function HomePage() {
                 Sobre
               </a>
               <Button
-                onClick={() => navigate("/professional-login")}
+                asChild
                 size="sm"
                 className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
               >
-                Área do Profissional
+                <a href="/professional-login">
+                  Área do Profissional
+                </a>
               </Button>
               <Button
-                onClick={() => navigate("/login")}
+                asChild
                 size="sm"
                 className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
               >
-                Área do Cliente
+                <a href="/login">
+                  Área do Cliente
+                </a>
               </Button>
             </nav>
           </div>
@@ -226,37 +222,39 @@ export default function HomePage() {
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card 
-                    className="hover:shadow-2xl hover:shadow-blue-500/20 transition-all cursor-pointer group bg-white/5 backdrop-blur-lg border-white/10 h-full" 
-                    onClick={() => handleServiceClick(service.id)}
+                  <a
+                    href={`/login?redirectTo=/questionnaire/${service.id}`}
+                    className="group block no-underline h-full"
                   >
-                    <CardHeader>
-                      <div className={`size-12 ${service.color} rounded-lg flex items-center justify-center mb-4 shadow-lg`}>
-                        <Icon className="size-6 text-white" />
-                      </div>
-                      <CardTitle className="text-2xl group-hover:text-blue-400 transition-colors text-white">
-                        {service.title}
-                      </CardTitle>
-                      <CardDescription className="text-base text-blue-200">
-                        {service.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3 mb-4">
-                        {service.features.map((feature, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-sm text-blue-100">
-                            <CheckCircle2 className="size-4 text-green-400 flex-shrink-0" />
-                            <span>{feature}</span>
+                    <Card className="hover:shadow-2xl hover:shadow-blue-500/20 transition-all bg-white/5 backdrop-blur-lg border-white/10 h-full">
+                      <CardHeader>
+                        <div className={`size-12 ${service.color} rounded-lg flex items-center justify-center mb-4 shadow-lg`}>
+                          <Icon className="size-6 text-white" />
+                        </div>
+                        <CardTitle className="text-2xl group-hover:text-blue-400 transition-colors text-white">
+                          {service.title}
+                        </CardTitle>
+                        <CardDescription className="text-base text-blue-200">
+                          {service.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3 mb-4">
+                          {service.features.map((feature, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-sm text-blue-100">
+                              <CheckCircle2 className="size-4 text-green-400 flex-shrink-0" />
+                              <span>{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="pt-4 border-t border-white/10">
+                          <div className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2.5 text-white font-medium transition-all group-hover:from-blue-600 group-hover:to-cyan-600">
+                            Contratar <ArrowRight className="size-4" />
                           </div>
-                        ))}
-                      </div>
-                      <div className="pt-4 border-t border-white/10">
-                        <Button className="w-full gap-2 group-hover:gap-3 transition-all bg-gradient-to-r from-blue-500 to-cyan-500">
-                          Contratar <ArrowRight className="size-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </a>
                 </motion.div>
               );
             })}
@@ -345,22 +343,26 @@ export default function HomePage() {
                 Faça login ou cadastre-se para solicitar orçamentos personalizados
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
-                <Button 
-                  size="lg" 
-                  variant="secondary" 
-                  className="gap-2 bg-white text-blue-600 hover:bg-gray-100" 
-                  onClick={() => navigate("/login")}
-                >
+              <Button
+                asChild
+                size="lg"
+                variant="secondary"
+                className="gap-2 bg-white text-blue-600 hover:bg-gray-100"
+              >
+                <a href="/login">
                   Acessar Área do Cliente <ArrowRight className="size-5" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="gap-2 bg-white text-blue-600 hover:bg-gray-100"
-                  onClick={() => navigate("/professional-login")}
-                >
+                </a>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="secondary"
+                className="gap-2 bg-white text-blue-600 hover:bg-gray-100"
+              >
+                <a href="/professional-login">
                   Acessar Área do Profissional <ArrowRight className="size-5" />
-                </Button>
+                </a>
+              </Button>
               </div>
             </CardContent>
           </Card>

@@ -83,10 +83,12 @@ export default function ProfessionalDashboard() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-              <Button variant="ghost" onClick={() => navigate("/")} className="gap-2 flex-shrink-0">
-                <ArrowLeft className="size-4" />
-                <span className="hidden sm:inline">Voltar para Home</span>
-                <span className="sm:hidden">Home</span>
+              <Button variant="ghost" asChild className="gap-2 flex-shrink-0">
+                <a href="/">
+                  <ArrowLeft className="size-4" />
+                  <span className="hidden sm:inline">Voltar para Home</span>
+                  <span className="sm:hidden">Home</span>
+                </a>
               </Button>
               <div className="min-w-0">
                 <h1 className="text-xl md:text-2xl font-bold text-green-600 truncate">Quick Fix - Profissional</h1>
@@ -161,9 +163,11 @@ export default function ProfessionalDashboard() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex justify-center pt-4"
           >
-            <Button size="lg" onClick={() => navigate("/orders-profissional")} className="px-16 py-6 text-base bg-green-600 hover:bg-green-700 hover:shadow-lg transition-all">
-              <LayoutDashboard className="size-5 mr-2" />
-              Ordens de Serviço
+            <Button asChild size="lg" className="px-16 py-6 text-base bg-green-600 hover:bg-green-700 hover:shadow-lg transition-all">
+              <a href="/orders-profissional">
+                <LayoutDashboard className="size-5 mr-2" />
+                Ordens de Serviço
+              </a>
             </Button>
           </motion.div>
 

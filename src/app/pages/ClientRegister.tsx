@@ -44,9 +44,11 @@ export default function ClientRegister() {
       <div className="w-full max-w-6xl">
         {/* Botão Voltar */}
         <div className="mb-4">
-          <Button variant="ghost" onClick={() => navigate("/login")} className="gap-2">
-            <ArrowLeft className="size-4" />
-            Voltar para Login
+          <Button variant="ghost" asChild className="gap-2">
+            <a href="/login">
+              <ArrowLeft className="size-4" />
+              Voltar para Login
+            </a>
           </Button>
         </div>
 

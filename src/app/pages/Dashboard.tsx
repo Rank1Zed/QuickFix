@@ -105,10 +105,12 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-              <Button variant="ghost" onClick={() => navigate("/")} className="gap-2 flex-shrink-0">
-                <ArrowLeft className="size-4" />
-                <span className="hidden sm:inline">Voltar para Home</span>
-                <span className="sm:hidden">Home</span>
+              <Button variant="ghost" asChild className="gap-2 flex-shrink-0">
+                <a href="/">
+                  <ArrowLeft className="size-4" />
+                  <span className="hidden sm:inline">Voltar para Home</span>
+                  <span className="sm:hidden">Home</span>
+                </a>
               </Button>
               <div className="min-w-0">
                 <h1 className="text-xl md:text-2xl font-bold truncate">Quick Fix</h1>
@@ -154,26 +156,30 @@ export default function Dashboard() {
                   className="w-full max-w-xs"
                 >
                   <Card
-                    className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer border-2 hover:border-primary flex flex-col h-full"
-                    onClick={() => navigate(`/questionnaire/${service.id}`)}
+                    className="group hover:shadow-2xl hover:scale-105 transition-all duration-300 border-2 hover:border-primary flex flex-col h-full"
                   >
-                    <CardHeader className="space-y-4 flex-1">
-                      <div className={`inline-flex p-4 rounded-xl bg-gradient-to-br ${service.gradient} w-fit shadow-lg`}>
-                        <Icon className="size-7 text-white" />
-                      </div>
-                      <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                        {service.title}
-                      </CardTitle>
-                      <CardDescription className="text-sm leading-relaxed">
-                        {service.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <Button className="w-full group-hover:shadow-md transition-all" variant="outline" size="sm">
-                        <Plus className="size-4 mr-2" />
-                        Iniciar Anamnese
-                      </Button>
-                    </CardContent>
+                    <a
+                      href={`/questionnaire/${service.id}`}
+                      className="flex flex-col h-full no-underline"
+                    >
+                      <CardHeader className="space-y-4 flex-1">
+                        <div className={`inline-flex p-4 rounded-xl bg-gradient-to-br ${service.gradient} w-fit shadow-lg`}>
+                          <Icon className="size-7 text-white" />
+                        </div>
+                        <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                          {service.title}
+                        </CardTitle>
+                        <CardDescription className="text-sm leading-relaxed">
+                          {service.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <Button className="w-full group-hover:shadow-md transition-all" variant="outline" size="sm">
+                          <Plus className="size-4 mr-2" />
+                          Iniciar Anamnese
+                        </Button>
+                      </CardContent>
+                    </a>
                   </Card>
                 </motion.div>
               );
@@ -190,11 +196,13 @@ export default function Dashboard() {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => navigate("/orders")}
+              asChild
               className="px-16 py-6 text-base hover:shadow-lg transition-all"
             >
-              <LayoutDashboard className="size-5 mr-2" />
-              Meus Pedidos
+              <a href="/orders">
+                <LayoutDashboard className="size-5 mr-2" />
+                Meus Pedidos
+              </a>
             </Button>
           </motion.div>
 

@@ -33,14 +33,22 @@ function formatCpf(value: string) {
 }
 
 function formatPhone(value: string) {
-  const digits = onlyDigits(value).replace(/^92/, "").slice(0, 9);
-  const firstPartLength = digits.length > 8 ? 5 : 4;
-  const firstPart = digits.slice(0, firstPartLength);
-  const secondPart = digits.slice(firstPartLength);
-
-  if (!digits) return "(92) ";
-  return `(92) ${firstPart}${secondPart ? `-${secondPart}` : ""}`;
+  const digits = onlyDigits(value);
+  
+  // Se não começar com 92, adiciona
+  let formattedDigits = digits.startsWith("92") ? digits : "92" + digits;
+  formattedDigits = formattedDigits.slice(0, 11);
+  
+  // Constrói a formatação: (92) XXXXX-XXXX ou (92) XXXX-XXXX
+  if (formattedDigits.length <= 2) {
+    return "(" + formattedDigits;
+  } else if (formattedDigits.length <= 7) {
+    return "(" + formattedDigits.slice(0, 2) + ") " + formattedDigits.slice(2);
+  } else {
+    return "(" + formattedDigits.slice(0, 2) + ") " + formattedDigits.slice(2, 7) + "-" + formattedDigits.slice(7);
+  }
 }
+
 
 function isValidCpf(value: string) {
   const cpf = onlyDigits(value);
@@ -77,7 +85,7 @@ export default function ProfessionalRegister() {
     if (/[0-9]/.test(trimmed)) return "Nome nao pode conter numeros.";
     if (trimmed !== trimmed.toUpperCase()) return "Digite o nome em letras maiusculas.";
     if (trimmed.split(/\s+/).length < 2) return "Informe nome e sobrenome.";
-    if (!/^[A-ZÀ-ÚÇ\s'.-]+$/.test(trimmed)) return "Use apenas letras e separadores validos.";
+    if (!/^[\p{L}\s'.-]+$/u.test(trimmed)) return "Use apenas letras e separadores validos.";
     return true;
   };
 
@@ -231,6 +239,12 @@ export default function ProfessionalRegister() {
                       onChange: (event) =>
                         setValue("nomeCompleto", normalizeUpperName(event.target.value), { shouldValidate: true }),
                     })}
+                    onKeyPress={(event: React.KeyboardEvent<HTMLInputElement>) => {
+                      // Impede digitar números
+                      if (/[0-9]/.test(event.key)) {
+                        event.preventDefault();
+                      }
+                    }}
                     placeholder="SEU NOME COMPLETO"
                   />
                   {errors.nomeCompleto && <span className="text-sm text-red-500">{errors.nomeCompleto.message}</span>}
@@ -260,6 +274,22 @@ export default function ProfessionalRegister() {
                       onChange: (event) =>
                         setValue("telefone", formatPhone(event.target.value), { shouldValidate: true }),
                     })}
+                    onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+                      const target = event.currentTarget;
+                      const key = event.key;
+                      const start = target.selectionStart || 0;
+                      const end = target.selectionEnd || 0;
+                      const value = target.value;
+                      
+                      // Impede remover parênteses, espaço e traço
+                      if (key === "Backspace" || key === "Delete") {
+                        const protectedIndices = [0, 1, 2, 4, 5, 10]; // Posições de (, ), espaço e -
+                        if ((key === "Backspace" && protectedIndices.includes(start - 1)) ||
+                            (key === "Delete" && protectedIndices.includes(start))) {
+                          event.preventDefault();
+                        }
+                      }
+                    }}
                     placeholder="(92) 00000-0000"
                   />
                   {errors.telefone && <span className="text-sm text-red-500">{errors.telefone.message}</span>}
