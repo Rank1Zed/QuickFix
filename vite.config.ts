@@ -26,8 +26,9 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
+      // Compatibilidade com imports antigos (ex.: "src/pages/HomePage.tsx") no deploy Vercel
+      src: path.resolve(__dirname, './src'),
     },
   },
 
