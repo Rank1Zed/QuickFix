@@ -1,6 +1,15 @@
 from django.contrib import admin
 
-from .models import ChatEscalation, ChatMessage, ChatSession, Client, KnowledgeEntry, Professional, ServiceOrder
+from .models import (
+    ChatEscalation,
+    ChatMessage,
+    ChatSession,
+    Client,
+    KnowledgeEntry,
+    Professional,
+    ProfessionalDocument,
+    ServiceOrder,
+)
 
 
 @admin.register(Client)
@@ -14,6 +23,11 @@ class ProfessionalAdmin(admin.ModelAdmin):
     list_display = ("full_name", "email", "phone", "status", "created_at")
     list_filter = ("status",)
     search_fields = ("full_name", "email", "phone", "registration")
+
+
+@admin.register(ProfessionalDocument)
+class ProfessionalDocumentAdmin(admin.ModelAdmin):
+    list_display = ("professional", "doc_type", "uploaded_at")
 
 
 @admin.register(ChatSession)

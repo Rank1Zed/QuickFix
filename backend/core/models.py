@@ -29,6 +29,8 @@ class Professional(models.Model):
     birth_date = models.DateField(null=True, blank=True)
     registration = models.CharField(max_length=80, blank=True)
     resume_name = models.CharField(max_length=255, blank=True)
+    resume_file = models.FileField(upload_to="professionals/resumes/%Y/%m/", blank=True, null=True)
+    password_hash = models.CharField(max_length=128, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pendente")
     rejection_reason = models.TextField(blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -36,6 +38,19 @@ class Professional(models.Model):
 
     def __str__(self):
         return self.full_name
+
+
+class ProfessionalDocument(models.Model):
+    DOC_DIPLOMA = "diploma"
+    DOC_CHOICES = [(DOC_DIPLOMA, "Diploma")]
+
+    professional = models.ForeignKey(Professional, on_delete=models.CASCADE, related_name="documents")
+    doc_type = models.CharField(max_length=20, choices=DOC_CHOICES, default=DOC_DIPLOMA)
+    file = models.FileField(upload_to="professionals/diplomas/%Y/%m/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["uploaded_at"]
 
 
 class ServiceOrder(models.Model):

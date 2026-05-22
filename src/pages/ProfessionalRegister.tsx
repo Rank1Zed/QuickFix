@@ -16,6 +16,8 @@ interface ProfessionalRegisterFormData {
   telefone: string;
   dataNascimento: string;
   cpf: string;
+  senha: string;
+  confirmarSenha: string;
 }
 
 const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
@@ -78,6 +80,8 @@ export default function ProfessionalRegister() {
 
   const [curriculo, setCurriculo] = useState<File | null>(null);
   const [curriculoError, setCurriculoError] = useState("");
+  const [diplomas, setDiplomas] = useState<File[]>([]);
+  const [diplomasError, setDiplomasError] = useState("");
 
   const validateFullName = (value: string) => {
     const trimmed = value.trim();
@@ -137,28 +141,56 @@ export default function ProfessionalRegister() {
     setCurriculoError("");
   };
 
-  const onSubmit = async (data: ProfessionalRegisterFormData) => {
-    const payload = {
-      ...data,
-      nomeCompleto: data.nomeCompleto.trim(),
-      telefone: formatPhone(data.telefone),
-      cpf: formatCpf(data.cpf),
-      curriculo: curriculo?.name,
-    };
+  const handleDiplomasChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const valid: File[] = [];
+    for (const file of files.slice(0, 6)) {
+      if (!["image/jpeg", "image/png", "image/webp", "image/jpg"].includes(file.type)) {
+        setDiplomasError("Diplomas: use JPG, PNG ou WebP.");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setDiplomasError("Cada imagem deve ter no maximo 5 MB.");
+        return;
+      }
+      valid.push(file);
+    }
+    setDiplomasError("");
+    setDiplomas(valid);
+  };
 
-    try {
-      const professional = await api.registerProfessional(payload);
-      localStorage.setItem("professionalRegisterData", JSON.stringify(professional));
-      localStorage.setItem("professionalData", JSON.stringify(professional));
-      toast.success("Cadastro enviado! Aguarde aprovacao da equipe.");
-    } catch (error) {
-      localStorage.setItem("professionalRegisterData", JSON.stringify(payload));
-      toast.warning("Servidor indisponivel. Cadastro salvo neste dispositivo.");
+  const onSubmit = async (data: ProfessionalRegisterFormData) => {
+    if (data.senha !== data.confirmarSenha) {
+      toast.error("As senhas nao coincidem.");
+      return;
+    }
+    if (!curriculo) {
+      toast.error("Envie o curriculo em PDF.");
+      return;
     }
 
-    setTimeout(() => {
-      navigate("/professional-login");
-    }, 800);
+    const form = new FormData();
+    form.append("nomeCompleto", data.nomeCompleto.trim());
+    form.append("email", data.email.trim().toLowerCase());
+    form.append("telefone", formatPhone(data.telefone));
+    form.append("dataNascimento", data.dataNascimento);
+    form.append("cpf", formatCpf(data.cpf));
+    form.append("senha", data.senha);
+    form.append("curriculo", curriculo);
+    diplomas.forEach((file) => form.append("diplomas", file));
+
+    try {
+      await api.registerProfessionalForm(form);
+      toast.success("Cadastro enviado! Aguarde aprovacao em /admin/avaliar.");
+      setTimeout(() => navigate("/professional-login"), 800);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Erro ao cadastrar.";
+      if (msg.includes("fetch") || msg.includes("Failed")) {
+        toast.error("Backend offline. Rode: cd backend && python manage.py runserver");
+      } else {
+        toast.error(msg);
+      }
+    }
   };
 
   return (
@@ -318,7 +350,68 @@ export default function ProfessionalRegister() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="curriculo">Envio de Curriculo (PDF)</Label>
+                  <Label htmlFor="senha">Senha *</Label>
+                  <Input
+                    id="senha"
+                    type="password"
+                    autoComplete="new-password"
+                    {...register("senha", {
+                      required: "Senha obrigatoria.",
+                      minLength: { value: 8, message: "Minimo 8 caracteres." },
+                    })}
+                    placeholder="Minimo 8 caracteres"
+                  />
+                  {errors.senha && <span className="text-sm text-red-500">{errors.senha.message}</span>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmarSenha">Confirmar senha *</Label>
+                  <Input
+                    id="confirmarSenha"
+                    type="password"
+                    autoComplete="new-password"
+                    {...register("confirmarSenha", {
+                      required: "Confirme a senha.",
+                      validate: (v, f) => v === f.senha || "As senhas nao coincidem.",
+                    })}
+                    placeholder="Repita a senha"
+                  />
+                  {errors.confirmarSenha && (
+                    <span className="text-sm text-red-500">{errors.confirmarSenha.message}</span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="diplomas">Imagens do diploma (JPG, PNG ou WebP)</Label>
+                  <label
+                    htmlFor="diplomas"
+                    className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg cursor-pointer bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 transition-colors"
+                  >
+                    <Upload className="size-5 text-blue-600 mb-1" />
+                    <span className="text-sm text-blue-700 dark:text-blue-400">Selecione ate 6 imagens</span>
+                    <input
+                      id="diplomas"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="hidden"
+                      onChange={handleDiplomasChange}
+                    />
+                  </label>
+                  {diplomas.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {diplomas.map((file, i) => (
+                        <span key={i} className="text-xs bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded">
+                          {file.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {diplomasError && <span className="text-sm text-red-500">{diplomasError}</span>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="curriculo">Curriculo (PDF) *</Label>
                   {!curriculo ? (
                     <label
                       htmlFor="curriculo"

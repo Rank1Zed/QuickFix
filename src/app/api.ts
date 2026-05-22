@@ -13,6 +13,12 @@ export interface ClientData {
   endereco?: string;
 }
 
+export interface DiplomaFile {
+  id: number;
+  name: string;
+  url: string;
+}
+
 export interface ProfessionalData {
   id?: number;
   nomeCompleto: string;
@@ -22,8 +28,13 @@ export interface ProfessionalData {
   dataNascimento?: string;
   registro?: string;
   curriculo?: string;
+  resumeUrl?: string;
+  diplomas?: DiplomaFile[];
+  senha?: string;
   status?: "pendente" | "aprovado" | "reprovado";
   rejectionReason?: string;
+  reviewedAt?: string;
+  createdAt?: string;
 }
 
 export interface ChatReply {
@@ -95,10 +106,10 @@ export const api = {
   registerClient(data: ClientData) {
     return request<ClientData>("/clients/register/", { method: "POST", body: JSON.stringify(data) });
   },
-  loginProfessional(email: string) {
+  loginProfessional(email: string, senha: string) {
     return request<ProfessionalData>("/professionals/", {
       method: "POST",
-      body: JSON.stringify({ email, nomeCompleto: "", telefone: "" }),
+      body: JSON.stringify({ email, senha }),
     });
   },
   registerProfessional(data: ProfessionalData) {
@@ -106,6 +117,24 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     });
+  },
+  async registerProfessionalForm(form: FormData) {
+    const response = await fetch(`${API_BASE_URL}/professionals/register/`, {
+      method: "POST",
+      body: form,
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const msg =
+        (body as { error?: string }).error ||
+        (body as { errors?: string[] }).errors?.join(", ") ||
+        `API ${response.status}`;
+      throw new Error(msg);
+    }
+    return body as ProfessionalData;
+  },
+  getProfessionalAdmin(id: number) {
+    return request<ProfessionalData>(`/admin/professionals/${id}/`, { headers: adminHeaders() });
   },
   async listOrders() {
     const data = await request<{ orders: Order[] }>("/orders/");
@@ -130,7 +159,7 @@ export const api = {
     });
   },
   listProfessionalsAdmin(status?: string) {
-    const q = status ? `?status=${status}` : "";
+    const q = status ? `?status=${encodeURIComponent(status)}` : "";
     return request<{ professionals: ProfessionalData[] }>(`/admin/professionals/${q}`, {
       headers: adminHeaders(),
     });

@@ -1,16 +1,32 @@
 import json
 import os
 import uuid
-from datetime import datetime
 
+from django.contrib.auth.hashers import check_password, make_password
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from .chat_service import create_escalation, generate_bot_reply, learn_from_escalation
-from .models import ChatEscalation, ChatMessage, ChatSession, Client, KnowledgeEntry, Professional, ServiceOrder
-from .validators import parse_birth_date, validate_email, validate_professional_payload
+from .models import (
+    ChatEscalation,
+    ChatMessage,
+    ChatSession,
+    Client,
+    KnowledgeEntry,
+    Professional,
+    ProfessionalDocument,
+    ServiceOrder,
+)
+from .validators import (
+    only_digits,
+    parse_birth_date,
+    validate_email,
+    validate_professional_payload,
+    validate_uploaded_image,
+    validate_uploaded_pdf,
+)
 
 
 def read_json(request):
@@ -46,20 +62,81 @@ def client_payload(client):
     }
 
 
-def professional_payload(professional):
+def format_cpf_display(document: str) -> str:
+    digits = only_digits(document)
+    if len(digits) != 11:
+        return document
+    return f"{digits[:3]}.{digits[3:6]}.{digits[6:9]}-{digits[9:]}"
+
+
+def file_absolute_url(request, file_field) -> str:
+    if not file_field:
+        return ""
+    url = file_field.url
+    if request:
+        return request.build_absolute_uri(url)
+    return url
+
+
+def professional_payload(professional, request=None):
+    diplomas = [
+        {
+            "id": doc.id,
+            "name": doc.file.name.split("/")[-1],
+            "url": file_absolute_url(request, doc.file),
+        }
+        for doc in professional.documents.filter(doc_type=ProfessionalDocument.DOC_DIPLOMA)
+    ]
     return {
         "id": professional.id,
         "nomeCompleto": professional.full_name,
         "email": professional.email,
         "telefone": professional.phone,
-        "cpf": professional.document,
+        "cpf": format_cpf_display(professional.document),
         "dataNascimento": professional.birth_date.isoformat() if professional.birth_date else "",
         "registro": professional.registration,
         "curriculo": professional.resume_name,
+        "resumeUrl": file_absolute_url(request, professional.resume_file),
+        "diplomas": diplomas,
         "status": professional.status,
         "rejectionReason": professional.rejection_reason,
         "reviewedAt": professional.reviewed_at.isoformat() if professional.reviewed_at else "",
+        "createdAt": professional.created_at.isoformat(),
     }
+
+
+def parse_register_data(request) -> dict | None:
+    content_type = request.content_type or ""
+    if "multipart/form-data" in content_type:
+        return {key: request.POST.get(key, "") for key in request.POST}
+    return read_json(request)
+
+
+def save_professional_files(professional, request, errors: list[str]) -> list[str]:
+    resume = request.FILES.get("curriculo")
+    if resume:
+        pdf_err = validate_uploaded_pdf(resume)
+        if pdf_err:
+            errors.append(pdf_err)
+        else:
+            professional.resume_file = resume
+            professional.resume_name = resume.name
+            professional.save(update_fields=["resume_file", "resume_name"])
+
+    diplomas = request.FILES.getlist("diplomas")
+    if diplomas:
+        professional.documents.filter(doc_type=ProfessionalDocument.DOC_DIPLOMA).delete()
+        for diploma in diplomas[:6]:
+            img_err = validate_uploaded_image(diploma)
+            if img_err:
+                errors.append(img_err)
+                continue
+            ProfessionalDocument.objects.create(
+                professional=professional,
+                doc_type=ProfessionalDocument.DOC_DIPLOMA,
+                file=diploma,
+            )
+    return errors
 
 
 def order_payload(order):
@@ -150,31 +227,42 @@ def professional_login_or_create(request):
     data = read_json(request)
     if data is None:
         return json_error("JSON invalido.")
-    professional = Professional.objects.filter(email=data.get("email", "").strip().lower()).first()
+    email = (data.get("email") or "").strip().lower()
+    senha = data.get("senha") or ""
+    if not email:
+        return json_error("E-mail obrigatorio.")
+    if not senha:
+        return json_error("Senha obrigatoria.")
+    professional = Professional.objects.filter(email=email).first()
     if not professional:
         return json_error("Profissional nao encontrado.", 404)
     if professional.status != "aprovado":
         return json_error("Cadastro ainda em analise ou reprovado.", 403)
-    return JsonResponse(professional_payload(professional))
+    if not professional.password_hash:
+        return json_error("Senha nao configurada. Refaca o cadastro.", 400)
+    if not check_password(senha, professional.password_hash):
+        return json_error("Senha incorreta.", 401)
+    return JsonResponse(professional_payload(professional, request))
 
 
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def professional_register(request):
-    data = read_json(request)
+    data = parse_register_data(request)
     if data is None:
-        return json_error("JSON invalido.")
-    errors = validate_professional_payload(data)
+        return json_error("Dados invalidos.")
+    errors = validate_professional_payload(data, require_password=True)
     if errors:
-        return JsonResponse({"errors": errors}, status=400)
+        return JsonResponse({"errors": errors, "error": errors[0]}, status=400)
     professional, created = Professional.objects.update_or_create(
         email=data["email"].strip().lower(),
         defaults={
             "full_name": data.get("nomeCompleto", "").strip(),
             "phone": data.get("telefone", "").strip(),
-            "document": data.get("cpf", ""),
+            "document": only_digits(data.get("cpf", "")),
             "birth_date": parse_birth_date(data.get("dataNascimento", "")),
-            "resume_name": data.get("curriculo", ""),
+            "resume_name": "",
+            "password_hash": make_password(data.get("senha", "")),
             "status": "pendente",
             "rejection_reason": "",
             "reviewed_at": None,
@@ -184,7 +272,10 @@ def professional_register(request):
         professional.status = "pendente"
         professional.rejection_reason = ""
         professional.save()
-    return JsonResponse(professional_payload(professional), status=201)
+    file_errors = save_professional_files(professional, request, [])
+    if file_errors:
+        return JsonResponse({"errors": file_errors, "error": file_errors[0]}, status=400)
+    return JsonResponse(professional_payload(professional, request), status=201)
 
 
 @csrf_exempt
@@ -197,7 +288,7 @@ def professionals_admin(request):
         qs = Professional.objects.all().order_by("-created_at")
         if status:
             qs = qs.filter(status=status)
-        return JsonResponse({"professionals": [professional_payload(p) for p in qs]})
+        return JsonResponse({"professionals": [professional_payload(p, request) for p in qs]})
     data = read_json(request)
     if data is None:
         return json_error("JSON invalido.")
@@ -213,7 +304,19 @@ def professionals_admin(request):
     professional.rejection_reason = data.get("rejectionReason", "")
     professional.reviewed_at = timezone.now()
     professional.save()
-    return JsonResponse(professional_payload(professional))
+    return JsonResponse(professional_payload(professional, request))
+
+
+@csrf_exempt
+@require_http_methods(["GET", "OPTIONS"])
+def professional_detail_admin(request, professional_id):
+    if not check_admin(request):
+        return json_error("Nao autorizado.", 401)
+    try:
+        professional = Professional.objects.prefetch_related("documents").get(pk=professional_id)
+    except Professional.DoesNotExist:
+        return json_error("Profissional nao encontrado.", 404)
+    return JsonResponse(professional_payload(professional, request))
 
 
 @csrf_exempt

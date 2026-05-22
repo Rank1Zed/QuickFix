@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, redirect } from "react-router";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import ClientRegister from "./pages/ClientRegister";
@@ -24,5 +24,6 @@ export const router = createBrowserRouter([
   { path: "/orders-profissional", Component: OrdersProfissionalKanban },
   { path: "/questionnaire/:serviceType", Component: QuestionnaireFlow },
   { path: "/result", Component: ResultPage },
+  { path: "/admin", loader: () => redirect("/admin/avaliar") },
   { path: "/admin/avaliar", Component: AdminDashboard },
 ]);

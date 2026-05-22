@@ -11,7 +11,8 @@ import { Toaster } from "../app/components/ui/sonner";
 import { api } from "../app/api";
 
 interface ProfessionalLoginFormData {
-  identifier: string;
+  email: string;
+  senha: string;
 }
 
 interface PasswordRecoveryFormData {
@@ -20,8 +21,6 @@ interface PasswordRecoveryFormData {
 }
 
 const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-const USERNAME_PATTERN = /^[a-zA-Z0-9._-]{3,40}$/;
-
 export default function ProfessionalLogin() {
   const navigate = useNavigate();
   const [showRecovery, setShowRecovery] = useState(false);
@@ -42,27 +41,15 @@ export default function ProfessionalLogin() {
     watch: watchRecovery,
   } = useForm<PasswordRecoveryFormData>({ mode: "onChange" });
 
-  const validateIdentifier = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return "Informe seu e-mail ou nome de usuario.";
-    }
-    if (trimmed.includes("@")) {
-      return EMAIL_PATTERN.test(trimmed) || "Informe um e-mail profissional valido.";
-    }
-    return USERNAME_PATTERN.test(trimmed) || "Use 3 a 40 caracteres: letras, numeros, ponto, hifen ou underline.";
-  };
-
   const onSubmit = async (data: ProfessionalLoginFormData) => {
-    const identifier = data.identifier.trim();
-    const email = identifier.includes("@") ? identifier : `${identifier}@quickfix.local`;
+    const email = data.email.trim().toLowerCase();
     try {
-      const professional = await api.loginProfessional(email);
+      const professional = await api.loginProfessional(email, data.senha);
       localStorage.setItem("professionalData", JSON.stringify(professional));
       toast.success("Login realizado!");
       navigate("/professional-dashboard");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nao foi possivel entrar. Cadastro pendente ou reprovado?");
+      toast.error(e instanceof Error ? e.message : "Nao foi possivel entrar.");
     }
   };
 
@@ -157,25 +144,45 @@ export default function ProfessionalLogin() {
                 <CardTitle className="text-2xl">Quick Fix</CardTitle>
               </div>
               <CardTitle className="text-2xl hidden lg:block">Login do Profissional</CardTitle>
-              <CardDescription>Entre com seu e-mail profissional ou nome de usuario cadastrado.</CardDescription>
+              <CardDescription>Entre com e-mail e senha cadastrados na aprovacao.</CardDescription>
             </CardHeader>
 
             <CardContent>
               {!showRecovery ? (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="identifier">E-mail ou nome de usuario *</Label>
+                    <Label htmlFor="email">E-mail profissional *</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        id="identifier"
+                        id="email"
+                        type="email"
                         className="pl-9"
                         autoComplete="username"
-                        {...register("identifier", { validate: validateIdentifier })}
-                        placeholder="profissional@quickfix.com ou usuario"
+                        {...register("email", {
+                          required: "E-mail obrigatorio.",
+                          pattern: { value: EMAIL_PATTERN, message: "E-mail invalido." },
+                        })}
+                        placeholder="profissional@quickfix.com"
                       />
                     </div>
-                    {errors.identifier && <span className="text-sm text-red-500">{errors.identifier.message}</span>}
+                    {errors.email && <span className="text-sm text-red-500">{errors.email.message}</span>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="senha">Senha *</Label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="senha"
+                        type="password"
+                        className="pl-9"
+                        autoComplete="current-password"
+                        {...register("senha", { required: "Senha obrigatoria." })}
+                        placeholder="Sua senha"
+                      />
+                    </div>
+                    {errors.senha && <span className="text-sm text-red-500">{errors.senha.message}</span>}
                   </div>
 
                   <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" size="lg">

@@ -9,6 +9,7 @@ urlpatterns = [
     path("professionals/", views.professional_login_or_create),
     path("professionals/register/", views.professional_register),
     path("admin/professionals/", views.professionals_admin),
+    path("admin/professionals/<int:professional_id>/", views.professional_detail_admin),
     path("orders/", views.orders),
     path("orders/<int:order_id>/", views.order_detail),
     path("chat/sessions/", views.chat_session_create),

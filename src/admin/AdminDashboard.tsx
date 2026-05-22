@@ -9,41 +9,65 @@ import { Textarea } from "../app/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../app/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../app/components/ui/tabs";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, MessageSquare, Search, UserCheck, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Eye, MessageSquare, RefreshCw, Search, UserCheck, XCircle } from "lucide-react";
+import { ProfessionalReviewDialog } from "./ProfessionalReviewDialog";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [professionals, setProfessionals] = useState<ProfessionalData[]>([]);
   const [escalations, setEscalations] = useState<ChatEscalation[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"" | "pendente" | "aprovado" | "reprovado">("");
+  const [statusFilter, setStatusFilter] = useState<"" | "pendente" | "aprovado" | "reprovado">("pendente");
   const [replies, setReplies] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<ProfessionalData | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [pros, esc] = await Promise.all([
-        api.listProfessionalsAdmin(statusFilter || undefined),
-        api.listEscalations("aberta"),
-      ]);
+      const pros = await api.listProfessionalsAdmin(statusFilter || undefined);
       setProfessionals(pros.professionals);
+    } catch (e) {
+      setProfessionals([]);
+      toast.error(
+        e instanceof Error ? e.message : "Nao foi possivel carregar profissionais. Backend rodando em :8000?"
+      );
+    }
+    try {
+      const esc = await api.listEscalations("aberta");
       setEscalations(esc.escalations);
     } catch {
-      toast.error("Erro ao carregar dados. Verifique se o backend esta rodando.");
-    } finally {
-      setLoading(false);
+      setEscalations([]);
     }
+    setLoading(false);
   }, [statusFilter]);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  const openDetail = async (prof: ProfessionalData) => {
+    if (!prof.id) return;
+    try {
+      const full = await api.getProfessionalAdmin(prof.id);
+      setSelected(full);
+      setDetailOpen(true);
+    } catch {
+      setSelected(prof);
+      setDetailOpen(true);
+    }
+  };
+
   const handleReview = async (id: number, status: "aprovado" | "reprovado") => {
     try {
       await api.reviewProfessional(id, status);
-      toast.success(status === "aprovado" ? "Profissional aprovado!" : "Cadastro reprovado.");
+      toast.success(
+        status === "aprovado"
+          ? "Aprovado! O profissional ja pode entrar com e-mail e senha."
+          : "Cadastro reprovado."
+      );
+      setDetailOpen(false);
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao atualizar.");
@@ -66,11 +90,16 @@ export default function AdminDashboard() {
     }
   };
 
-  const filtered = professionals.filter(
-    (p) =>
+  const searchDigits = searchTerm.replace(/\D/g, "");
+  const filtered = professionals.filter((p) => {
+    if (!searchTerm.trim()) return true;
+    const cpf = (p.cpf || "").replace(/\D/g, "");
+    return (
       p.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.cpf || "").includes(searchTerm)
-  );
+      (p.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (searchDigits && cpf.includes(searchDigits))
+    );
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 p-4 md:p-8">
@@ -83,8 +112,14 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <UserCheck className="text-green-600 size-8" /> Painel Admin
             </h1>
-            <p className="text-muted-foreground">Avaliacao de profissionais e atendimento do chatbot.</p>
+            <p className="text-muted-foreground">
+              Aprove para liberar login na area do profissional. Backend: http://127.0.0.1:8000
+            </p>
           </div>
+          <div className="flex gap-2 items-center">
+            <Button variant="outline" size="icon" onClick={() => load()} title="Atualizar lista">
+              <RefreshCw className="size-4" />
+            </Button>
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
@@ -93,6 +128,7 @@ export default function AdminDashboard() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
           </div>
         </div>
 
@@ -154,16 +190,21 @@ export default function AdminDashboard() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            {prof.status === "pendente" && prof.id && (
-                              <div className="flex justify-end gap-1">
-                                <Button size="sm" variant="ghost" className="text-green-600" onClick={() => handleReview(prof.id!, "aprovado")}>
-                                  <CheckCircle className="size-5" />
-                                </Button>
-                                <Button size="sm" variant="ghost" className="text-red-600" onClick={() => handleReview(prof.id!, "reprovado")}>
-                                  <XCircle className="size-5" />
-                                </Button>
-                              </div>
-                            )}
+                            <div className="flex justify-end gap-1">
+                              <Button size="sm" variant="outline" onClick={() => openDetail(prof)} title="Ver cadastro completo">
+                                <Eye className="size-4" />
+                              </Button>
+                              {prof.status === "pendente" && prof.id && (
+                                <>
+                                  <Button size="sm" variant="ghost" className="text-green-600" onClick={() => handleReview(prof.id!, "aprovado")}>
+                                    <CheckCircle className="size-5" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="text-red-600" onClick={() => handleReview(prof.id!, "reprovado")}>
+                                    <XCircle className="size-5" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -197,6 +238,13 @@ export default function AdminDashboard() {
             )}
           </TabsContent>
         </Tabs>
+
+        <ProfessionalReviewDialog
+          professional={selected}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          onReview={handleReview}
+        />
       </div>
     </div>
   );

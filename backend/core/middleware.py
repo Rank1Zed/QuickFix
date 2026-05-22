@@ -10,7 +10,9 @@ class SimpleCorsMiddleware:
         else:
             response = self.get_response(request)
 
-        response["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+        origin = request.headers.get("Origin", "*")
+        response["Access-Control-Allow-Origin"] = origin
         response["Access-Control-Allow-Methods"] = "GET, POST, PATCH, OPTIONS"
-        response["Access-Control-Allow-Headers"] = "Content-Type"
+        response["Access-Control-Allow-Headers"] = "Content-Type, X-Admin-Token"
+        response["Access-Control-Allow-Credentials"] = "true"
         return response

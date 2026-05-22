@@ -39,7 +39,33 @@ def parse_birth_date(value: str) -> date | None:
         return None
 
 
-def validate_professional_payload(data: dict) -> list[str]:
+def validate_password(senha: str) -> str | None:
+    if not senha or len(senha) < 8:
+        return "Senha deve ter no minimo 8 caracteres."
+    return None
+
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
+MAX_FILE_BYTES = 5 * 1024 * 1024
+
+
+def validate_uploaded_image(uploaded_file) -> str | None:
+    if uploaded_file.size > MAX_FILE_BYTES:
+        return "Imagem deve ter no maximo 5 MB."
+    if uploaded_file.content_type not in ALLOWED_IMAGE_TYPES:
+        return "Use imagens JPG, PNG ou WebP."
+    return None
+
+
+def validate_uploaded_pdf(uploaded_file) -> str | None:
+    if uploaded_file.size > MAX_FILE_BYTES:
+        return "PDF deve ter no maximo 5 MB."
+    if uploaded_file.content_type != "application/pdf":
+        return "Curriculo deve ser PDF."
+    return None
+
+
+def validate_professional_payload(data: dict, require_password: bool = False) -> list[str]:
     errors = []
     if not (data.get("nomeCompleto") or "").strip():
         errors.append("Nome completo obrigatorio.")
@@ -50,4 +76,8 @@ def validate_professional_payload(data: dict) -> list[str]:
     cpf_err = validate_cpf(data.get("cpf", ""))
     if cpf_err:
         errors.append(cpf_err)
+    if require_password:
+        pwd_err = validate_password(data.get("senha", ""))
+        if pwd_err:
+            errors.append(pwd_err)
     return errors
