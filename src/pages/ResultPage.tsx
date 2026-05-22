@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Separator } from "../components/ui/separator";
+import { Button } from "../app/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";
+import { Badge } from "../app/components/ui/badge";
+import { Separator } from "../app/components/ui/separator";
 import { CheckCircle2, Clock, AlertTriangle, AlertCircle, Printer, Home, FileText, Info } from "lucide-react";
 import { questionsByService } from "../data/questions";
-import { AnimatedProgress } from "../components/AnimatedProgress";
+import { AnimatedProgress } from "../app/components/AnimatedProgress";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { motion } from "motion/react";
 

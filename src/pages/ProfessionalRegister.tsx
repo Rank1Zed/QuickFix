@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../app/components/ui/button";
+import { Input } from "../app/components/ui/input";
+import { Label } from "../app/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";
 import { Computer, Wifi, Wrench, ArrowLeft, Shield, Award, Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
-import { Toaster } from "../components/ui/sonner";
-import { api } from "../api";
+import { Toaster } from "../app/components/ui/sonner";
+import { api } from "../app/api";
 
 interface ProfessionalRegisterFormData {
   nomeCompleto: string;
@@ -150,7 +150,7 @@ export default function ProfessionalRegister() {
       const professional = await api.registerProfessional(payload);
       localStorage.setItem("professionalRegisterData", JSON.stringify(professional));
       localStorage.setItem("professionalData", JSON.stringify(professional));
-      toast.success("Cadastro salvo no servidor!");
+      toast.success("Cadastro enviado! Aguarde aprovacao da equipe.");
     } catch (error) {
       localStorage.setItem("professionalRegisterData", JSON.stringify(payload));
       toast.warning("Servidor indisponivel. Cadastro salvo neste dispositivo.");

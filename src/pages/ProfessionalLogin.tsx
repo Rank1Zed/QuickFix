@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../app/components/ui/button";
+import { Input } from "../app/components/ui/input";
+import { Label } from "../app/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";
 import { Computer, Wifi, Wrench, ArrowLeft, Shield, Award, Mail, KeyRound } from "lucide-react";
 import { toast } from "sonner";
-import { Toaster } from "../components/ui/sonner";
+import { Toaster } from "../app/components/ui/sonner";
+import { api } from "../app/api";
 
 interface ProfessionalLoginFormData {
   identifier: string;
@@ -52,14 +53,17 @@ export default function ProfessionalLogin() {
     return USERNAME_PATTERN.test(trimmed) || "Use 3 a 40 caracteres: letras, numeros, ponto, hifen ou underline.";
   };
 
-  const onSubmit = (data: ProfessionalLoginFormData) => {
+  const onSubmit = async (data: ProfessionalLoginFormData) => {
     const identifier = data.identifier.trim();
-    localStorage.setItem("professionalData", JSON.stringify({ identifier, loginAt: new Date().toISOString() }));
-    toast.success("Login profissional validado!");
-
-    setTimeout(() => {
+    const email = identifier.includes("@") ? identifier : `${identifier}@quickfix.local`;
+    try {
+      const professional = await api.loginProfessional(email);
+      localStorage.setItem("professionalData", JSON.stringify(professional));
+      toast.success("Login realizado!");
       navigate("/professional-dashboard");
-    }, 500);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Nao foi possivel entrar. Cadastro pendente ou reprovado?");
+    }
   };
 
   const sendRecoveryCode = (data: PasswordRecoveryFormData) => {

@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Label } from "../components/ui/label";
-import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
-import { Progress } from "../components/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";
+import { Button } from "../app/components/ui/button";
+import { Label } from "../app/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "../app/components/ui/radio-group";
+import { Progress } from "../app/components/ui/progress";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { questionsByService } from "../data/questions";
-import { Textarea } from "../components/ui/textarea";
-import { Badge } from "../components/ui/badge";
-import { api } from "../api";
+import { questionsByService } from "./data/questions";
+import { Textarea } from "../app/components/ui/textarea";
+import { Badge } from "../app/components/ui/badge";
+import { api } from "../app/api";
 
 const serviceNames: Record<string, string> = {
   manutencao: "Manutenção de Computadores",

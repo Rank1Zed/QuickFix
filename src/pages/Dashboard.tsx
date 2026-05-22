@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
+import { Button } from "../app/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";
+import { Badge } from "../app/components/ui/badge";
 import { Computer, Wifi, LogOut, FileText, Clock, ArrowRight, LayoutDashboard, ArrowLeft, Plus } from "lucide-react";
 import { motion } from "motion/react";
 

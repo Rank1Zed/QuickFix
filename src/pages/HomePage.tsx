@@ -1,13 +1,13 @@
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Progress } from "../components/ui/progress";
+import { Button } from "../app/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";
+import { Badge } from "../app/components/ui/badge";
+import { Progress } from "../app/components/ui/progress";
 import { ArrowRight, Wrench, Network, Laptop, HardDrive, Wifi, Shield, ChevronRight, Star, CheckCircle2, Clock, Zap } from "lucide-react";
-import { AnimatedBackground } from "../components/AnimatedBackground";
-import { LiveCounter } from "../components/LiveCounter";
-import { InfiniteSlider } from "../components/InfiniteSlider";
-import { ChatbotWidget } from "../components/ChatbotWidget";
-import { SystemStatus } from "../components/SystemStatus";
+import { AnimatedBackground } from "../app/components/AnimatedBackground";
+import { LiveCounter } from "../app/components/LiveCounter";
+import { InfiniteSlider } from "../app/components/InfiniteSlider";
+import { ChatbotWidget } from "../app/components/ChatbotWidget";
+import { SystemStatus } from "../app/components/SystemStatus";
 import { motion } from "motion/react";
 
 const services = [
