@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ap
 import { Badge } from "../app/components/ui/badge";
 import { Separator } from "../app/components/ui/separator";
 import { CheckCircle2, Clock, AlertTriangle, AlertCircle, Printer, Home, FileText, Info } from "lucide-react";
-import { questionsByService } from "../data/questions";
+import { questionsByService } from "../app/data/questions";
 import { AnimatedProgress } from "../app/components/AnimatedProgress";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { motion } from "motion/react";

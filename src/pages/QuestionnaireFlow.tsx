@@ -6,7 +6,7 @@ import { Label } from "../app/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../app/components/ui/radio-group";
 import { Progress } from "../app/components/ui/progress";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { questionsByService } from "./data/questions";
+import { questionsByService } from "../app/data/questions";
 import { Textarea } from "../app/components/ui/textarea";
 import { Badge } from "../app/components/ui/badge";
 import { api } from "../app/api";
