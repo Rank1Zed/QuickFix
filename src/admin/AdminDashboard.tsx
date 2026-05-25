@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { api, ChatEscalation, ProfessionalData } from "../app/api";
+import { API_BASE_URL, api, ChatEscalation, ProfessionalData } from "../app/api";
 import { Badge } from "../app/components/ui/badge";
 import { Button } from "../app/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
               <UserCheck className="text-green-600 size-8" /> Painel Admin
             </h1>
             <p className="text-muted-foreground">
-              Aprove para liberar login na area do profissional. Backend: http://127.0.0.1:8000
+              Aprove para liberar login na area do profissional. Backend: {API_BASE_URL}
             </p>
           </div>
           <div className="flex gap-2 items-center">

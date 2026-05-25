@@ -3,6 +3,7 @@ import os
 import uuid
 
 from django.contrib.auth.hashers import check_password, make_password
+from django.db import transaction
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -72,7 +73,10 @@ def format_cpf_display(document: str) -> str:
 def file_absolute_url(request, file_field) -> str:
     if not file_field:
         return ""
-    url = file_field.url
+    try:
+        url = file_field.url
+    except ValueError:
+        return ""
     if request:
         return request.build_absolute_uri(url)
     return url
@@ -136,6 +140,26 @@ def save_professional_files(professional, request, errors: list[str]) -> list[st
                 doc_type=ProfessionalDocument.DOC_DIPLOMA,
                 file=diploma,
             )
+    return errors
+
+
+def validate_professional_files(request) -> list[str]:
+    errors = []
+    resume = request.FILES.get("curriculo")
+    if not resume:
+        errors.append("Curriculo em PDF obrigatorio.")
+    else:
+        pdf_err = validate_uploaded_pdf(resume)
+        if pdf_err:
+            errors.append(pdf_err)
+
+    diplomas = request.FILES.getlist("diplomas")
+    if len(diplomas) > 6:
+        errors.append("Envie no maximo 6 imagens de diploma.")
+    for diploma in diplomas[:6]:
+        img_err = validate_uploaded_image(diploma)
+        if img_err:
+            errors.append(img_err)
     return errors
 
 
@@ -252,29 +276,35 @@ def professional_register(request):
     if data is None:
         return json_error("Dados invalidos.")
     errors = validate_professional_payload(data, require_password=True)
+    if "multipart/form-data" in (request.content_type or ""):
+        errors.extend(validate_professional_files(request))
     if errors:
         return JsonResponse({"errors": errors, "error": errors[0]}, status=400)
-    professional, created = Professional.objects.update_or_create(
-        email=data["email"].strip().lower(),
-        defaults={
-            "full_name": data.get("nomeCompleto", "").strip(),
-            "phone": data.get("telefone", "").strip(),
-            "document": only_digits(data.get("cpf", "")),
-            "birth_date": parse_birth_date(data.get("dataNascimento", "")),
-            "resume_name": "",
-            "password_hash": make_password(data.get("senha", "")),
-            "status": "pendente",
-            "rejection_reason": "",
-            "reviewed_at": None,
-        },
-    )
-    if not created and professional.status == "reprovado":
-        professional.status = "pendente"
-        professional.rejection_reason = ""
-        professional.save()
-    file_errors = save_professional_files(professional, request, [])
-    if file_errors:
-        return JsonResponse({"errors": file_errors, "error": file_errors[0]}, status=400)
+    try:
+        with transaction.atomic():
+            professional, created = Professional.objects.update_or_create(
+                email=data["email"].strip().lower(),
+                defaults={
+                    "full_name": data.get("nomeCompleto", "").strip(),
+                    "phone": data.get("telefone", "").strip(),
+                    "document": only_digits(data.get("cpf", "")),
+                    "birth_date": parse_birth_date(data.get("dataNascimento", "")),
+                    "resume_name": "",
+                    "password_hash": make_password(data.get("senha", "")),
+                    "status": "pendente",
+                    "rejection_reason": "",
+                    "reviewed_at": None,
+                },
+            )
+            if not created and professional.status == "reprovado":
+                professional.status = "pendente"
+                professional.rejection_reason = ""
+                professional.save(update_fields=["status", "rejection_reason"])
+            file_errors = save_professional_files(professional, request, [])
+            if file_errors:
+                return JsonResponse({"errors": file_errors, "error": file_errors[0]}, status=400)
+    except OSError:
+        return json_error("Falha ao salvar arquivos enviados. Verifique DJANGO_MEDIA_ROOT/storage do backend.", 500)
     return JsonResponse(professional_payload(professional, request), status=201)
 
 

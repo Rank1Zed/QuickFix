@@ -1,4 +1,6 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+const configuredApiUrl = (import.meta.env.VITE_API_URL || "").trim();
+const defaultApiUrl = import.meta.env.DEV ? "http://127.0.0.1:8000/api" : "/_/backend/api";
+export const API_BASE_URL = (configuredApiUrl || defaultApiUrl).replace(/\/+$/, "");
 const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || "quickfix-admin-dev";
 
 export interface ClientData {
