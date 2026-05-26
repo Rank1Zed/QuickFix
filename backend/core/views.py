@@ -43,6 +43,10 @@ def json_error(message, status=400):
     return JsonResponse({"error": message}, status=status)
 
 
+def choice_values(choices):
+    return {value for value, _label in choices}
+
+
 def check_admin(request):
     token = request.headers.get("X-Admin-Token", "")
     expected = os.environ.get("ADMIN_API_TOKEN", "quickfix-admin-dev")
@@ -361,6 +365,16 @@ def orders(request):
     result = data.get("questionnaireData", data)
     client_data = data.get("client")
     client = None
+    order_type = data.get("type", "Hardware")
+    status = data.get("status", "analise")
+    priority = data.get("priority", "media")
+
+    if order_type not in {"Hardware", "Redes"}:
+        return json_error("Tipo de pedido invalido.")
+    if status not in choice_values(ServiceOrder.STATUS_CHOICES):
+        return json_error("Status de pedido invalido.")
+    if priority not in choice_values(ServiceOrder.PRIORITY_CHOICES):
+        return json_error("Prioridade de pedido invalida.")
 
     if client_data and client_data.get("email"):
         client, _ = Client.objects.update_or_create(
@@ -377,9 +391,9 @@ def orders(request):
         client=client,
         title=data.get("title") or result.get("serviceName", "Servico Quick Fix"),
         service_type=result.get("serviceType", ""),
-        type=data.get("type", "Hardware"),
-        status=data.get("status", "analise"),
-        priority=data.get("priority", "media"),
+        type=order_type,
+        status=status,
+        priority=priority,
         professional=data.get("professional", "Aguardando atribuicao"),
         estimated_time=data.get("estimatedTime", ""),
         description=result.get("description", ""),
@@ -407,6 +421,8 @@ def order_detail(request, order_id):
     if data is None:
         return json_error("JSON invalido.")
     if "status" in data:
+        if data["status"] not in choice_values(ServiceOrder.STATUS_CHOICES):
+            return json_error("Status de pedido invalido.")
         order.status = data["status"]
     if "professional" in data:
         order.professional = data["professional"]

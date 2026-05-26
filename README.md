@@ -2,7 +2,26 @@
 
 Site React + aplicativo PWA + backend Django/SQLite para cadastro de clientes, profissionais e pedidos.
 
-## Rodar o backend
+## Rodar o projeto em desenvolvimento
+
+```bash
+npm install
+npm run dev
+```
+
+O comando acima prepara as migracoes do Django, inicia a API em `http://127.0.0.1:8000/api/` e sobe o Vite no mesmo terminal. Se uma API QuickFix ja estiver ativa na porta 8000, o script reaproveita ela; se a porta estiver ocupada por outro processo, ele mostra um erro claro.
+
+Crie um arquivo `.env` local usando `.env.example` como modelo. Nunca envie `.env` para o Git.
+
+## Rodar partes separadas
+
+Frontend apenas:
+
+```bash
+npm run dev:frontend
+```
+
+Backend manual, se precisar depurar diretamente:
 
 ```bash
 cd backend
@@ -11,20 +30,7 @@ python manage.py migrate
 python manage.py runserver 127.0.0.1:8000
 ```
 
-API principal: `http://127.0.0.1:8000/api/`.
-
-Crie um arquivo `.env` local usando `.env.example` como modelo. Nunca envie `.env` para o Git.
-
-## Rodar o site
-
-Em outro terminal:
-
-```bash
-npm install
-npm run dev
-```
-
-Abra a URL do Vite. O frontend usa `http://127.0.0.1:8000/api` por padrao. Para trocar:
+O frontend usa `http://127.0.0.1:8000/api` por padrao. Para trocar:
 
 ```bash
 VITE_API_URL=http://127.0.0.1:8000/api npm run dev

@@ -1,4 +1,4 @@
-import { ProfessionalData } from "../app/api";
+import type { ProfessionalData } from "../app/api";
 import { Badge } from "../app/components/ui/badge";
 import { Button } from "../app/components/ui/button";
 import {

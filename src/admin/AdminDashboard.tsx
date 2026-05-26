@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { API_BASE_URL, api, ChatEscalation, ProfessionalData } from "../app/api";
+import { API_BASE_URL, api, type ChatEscalation, type ProfessionalData } from "../app/api";
 import { Badge } from "../app/components/ui/badge";
 import { Button } from "../app/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../app/components/ui/card";

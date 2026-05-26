@@ -2,6 +2,7 @@ node_modules/
 dist/
 
 backend/db.sqlite3
+backend/.d_venv/
 backend/media/
 backend/**/__pycache__/
 backend/**/*.pyc
